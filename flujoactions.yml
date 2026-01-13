@@ -1,0 +1,41 @@
+name: Docker Image CI / Teddy Pujota
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    name: Build Docker image and push to repositories
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Chekout code
+      uses: actions/checkout@v4
+    - name: login to hub
+      uses: docker/loginn-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Build the Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: dxmixn/isa-oct25-cicd-docker:flaskapp
+    -name: Deployment
+    uses: appleboy/ssh-action@v1
+    with:
+    host: ${{ secrets.SSH_HOST }}
+    username: ${{ secrets.SSH:USER }}
+    key: ${{ secrets.SSH_KEY }}
+    port: ${{ secrets.SSH_PORT }}
+    script: |
+      docker image pull dxmixn/isa-oct25-cicd-docker:flaskapp
+      docker conntainer stop flask
+      docker conntainer rm flask
+      docker conntainer runn -d --name flask -p80:5000 dxmixn/isa-oct25-cicd-docker:flaskapp
